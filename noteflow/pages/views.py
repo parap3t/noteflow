@@ -8,42 +8,57 @@ from .models import Note
 def home(request):
     return render(request, 'pages/index.html')
 
+
 def about(request):
     return render(request, 'pages/about.html')
+
 
 def login_view(request):
 
     if request.method == 'POST':
+
         form = LoginForm(request.POST)
+
         if form.is_valid():
+
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, username=username, password=password)
+
             if user is not None:
+
                 login(request, user)
-                return redirect('home')  # Перенаправление после входа
+
+                return redirect('notes')
+
             else:
                 form.add_error(None, 'Неверный логин или пароль')
+
     else:
         form = LoginForm()  # Пустая форма при GET-запросе
 
     return render(request, 'pages/login.html', {'form': form})
 
 
-
 def register_view(request):
+
     if request.method == 'POST':
+
         form = RegisterForm(request.POST)
+
         if form.is_valid():
+
             user = form.save(commit=False)  # Создаём пользователя, но не сохраняем в базе
             user.set_password(form.cleaned_data['password'])  # Устанавливаем пароль
             user.save()  # Сохраняем пользователя в базе данных
             login(request, user)  # Автоматически авторизуем пользователя
-            return redirect('home')  # Перенаправляем на главную страницу
+
+            return redirect('notes')
+
     else:
         form = RegisterForm()  # Пустая форма при GET-запросе
 
-    return render(request, 'pages/register.html', {'form': form})
+    return render(request, 'pages/registration.html', {'form': form})
 
 
 @login_required

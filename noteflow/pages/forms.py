@@ -29,6 +29,16 @@ class RegisterForm(forms.ModelForm):
             }),
         }
 
+    def clean_username(self):
+
+        username = self.cleaned_data.get('username')
+
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError('Пользователь с таким именем уже существует.')
+
+        return username
+
+
     def clean(self):
 
         cleaned_data = super().clean()
