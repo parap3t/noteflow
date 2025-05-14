@@ -22,7 +22,10 @@ from . import views
 urlpatterns = [
     path('', views.home, name="home"),
     path('login/', views.login_view, name='login'),
-    path('register/', views.register_view, name="register"),
+    path('register/', views.register_view, name="registration"),
     path('about/', views.about, name="about"),
-    path('notes/', views.notes, name="notes")
+    path('notes/', views.notes, name="notes"),
+    path('create_note/', views.create_note, name='create_note'),
+    path('edit_note/<int:note_id>/', views.edit_note, name='edit_note'),
+    path('delete_note/<int:note_id>/', views.delete_note, name='delete_note')
 ]
