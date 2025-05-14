@@ -10,6 +10,11 @@ def home(request):
 def about(request):
     return render(request, 'pages/about.html')
 
+def login(request):
+    return render(request, 'pages/login.html')
+
+def register(request):
+    return render(request, 'pages/registration.html')
 
 @login_required
 def notes(request):
