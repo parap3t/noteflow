@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required  # Импортируем декоратор
-from .forms import LoginForm
+from .forms import LoginForm, RegisterForm
 from .models import Note
 
 
@@ -30,8 +30,21 @@ def login_view(request):
     return render(request, 'pages/login.html', {'form': form})
 
 
+
 def register_view(request):
-    return render(request, 'pages/registration.html')
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)  # Создаём пользователя, но не сохраняем в базе
+            user.set_password(form.cleaned_data['password'])  # Устанавливаем пароль
+            user.save()  # Сохраняем пользователя в базе данных
+            login(request, user)  # Автоматически авторизуем пользователя
+            return redirect('home')  # Перенаправляем на главную страницу
+    else:
+        form = RegisterForm()  # Пустая форма при GET-запросе
+
+    return render(request, 'pages/register.html', {'form': form})
+
 
 @login_required
 def notes(request):
