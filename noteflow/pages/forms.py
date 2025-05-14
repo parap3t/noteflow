@@ -4,6 +4,12 @@ from django.contrib.auth.models import User
 
 class RegisterForm(forms.ModelForm):
 
+    username = forms.CharField(label='Логин', max_length=150, widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'id': 'username',
+        'required': 'required'
+    }))
+
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={
         'class': 'form-control',
         'id': 'password',
@@ -20,14 +26,6 @@ class RegisterForm(forms.ModelForm):
 
         model = User
         fields = ['username']
-
-        widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'form-control',
-                'id': 'username',
-                'required': 'required'
-            }),
-        }
 
     def clean_username(self):
 
