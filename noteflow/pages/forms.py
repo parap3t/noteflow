@@ -3,11 +3,13 @@ from django.contrib.auth.models import User
 
 
 class RegisterForm(forms.ModelForm):
+
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={
         'class': 'form-control',
         'id': 'password',
         'required': 'required'
     }))
+
     confirm_password = forms.CharField(label='Подтвердите пароль', widget=forms.PasswordInput(attrs={
         'class': 'form-control',
         'id': 'confirm_password',
@@ -15,8 +17,10 @@ class RegisterForm(forms.ModelForm):
     }))
 
     class Meta:
+
         model = User
         fields = ['username']
+
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -26,9 +30,23 @@ class RegisterForm(forms.ModelForm):
         }
 
     def clean(self):
+
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
 
         if password and confirm_password and password != confirm_password:
             self.add_error('confirm_password', 'Пароли не совпадают')
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(label='Логин', max_length=150, widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'id': 'username',
+        'required': 'required'
+    }))
+    password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'id': 'password',
+        'required': 'required'
+    }))
