@@ -1,6 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required  # Импортируем декоратор
+from django.http import JsonResponse
 from .forms import LoginForm, RegisterForm
 from .models import Note
 
@@ -32,7 +33,7 @@ def login_view(request):
                 return redirect('notes')
 
             else:
-                form.add_error(None, 'Неверный логин или пароль')
+                form.add_error('username', 'Неверный логин или пароль')
 
     else:
         form = LoginForm()  # Пустая форма при GET-запросе
@@ -68,3 +69,51 @@ def notes(request):
     user_notes = Note.objects.filter(user=request.user)
 
     return render(request, 'pages/notes.html', {'notes': user_notes})
+
+
+@login_required
+def create_note(request):
+    if request.method == 'POST':
+        text = request.POST.get('text')
+        if text:
+            note = Note.objects.create(user=request.user, text=text)
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Заметка создана',
+                'note': {
+                    'id': note.id,
+                    'text': note.text
+                }
+            })
+        return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
+
+    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
+
+
+@login_required
+def edit_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id, user=request.user)
+    if request.method == 'POST':
+        text = request.POST.get('text')
+        if text:
+            note.text = text
+            note.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Заметка обновлена',
+                'note': {
+                    'id': note.id,
+                    'text': note.text
+                }
+            })
+        return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
+    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
+
+
+@login_required
+def delete_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id, user=request.user)
+    if request.method == 'POST':
+        note.delete()
+        return JsonResponse({'status': 'success', 'message': 'Заметка удалена'})
+    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
