@@ -1,10 +1,13 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required  # Импортируем декоратор
 from django.http import JsonResponse
 from .forms import LoginForm, RegisterForm
 from .models import Note
-
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 def home(request):
     return render(request, 'pages/index.html')
@@ -49,71 +52,93 @@ def register_view(request):
 
         if form.is_valid():
 
-            user = form.save(commit=False)  # Создаём пользователя, но не сохраняем в базе
-            user.set_password(form.cleaned_data['password'])  # Устанавливаем пароль
-            user.save()  # Сохраняем пользователя в базе данных
-            login(request, user)  # Автоматически авторизуем пользователя
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            login(request, user)
 
             return redirect('notes')
 
     else:
-        form = RegisterForm()  # Пустая форма при GET-запросе
+        form = RegisterForm()
 
     return render(request, 'pages/registration.html', {'form': form})
 
 
+# Главная страница с заметками
 @login_required
 def notes(request):
-
-    # Получаем все заметки текущего пользователя
     user_notes = Note.objects.filter(user=request.user)
-
     return render(request, 'pages/notes.html', {'notes': user_notes})
 
 
+# Создание новой заметки
 @login_required
+@require_POST  # Проверяем, что запрос является POST
+@csrf_protect  # Защищаем от CSRF атак
 def create_note(request):
-    if request.method == 'POST':
-        text = request.POST.get('text')
-        if text:
-            note = Note.objects.create(user=request.user, text=text)
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Заметка создана',
-                'note': {
-                    'id': note.id,
-                    'text': note.text
-                }
-            })
-        return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
 
-    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
+    try:
+
+        data = json.loads(request.body)
+        text = data.get('text', '').strip()
+
+        if not text:
+            return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
+
+        note = Note.objects.create(user=request.user, text=text)
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Заметка создана',
+            'note': {'id': note.id, 'text': note.text}
+        })
+
+    except (json.JSONDecodeError, Exception) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 
+# Редактирование заметки
 @login_required
+@require_POST  # Проверяем, что запрос является POST
+@csrf_protect  # Защищаем от CSRF атак
 def edit_note(request, note_id):
-    note = get_object_or_404(Note, id=note_id, user=request.user)
-    if request.method == 'POST':
-        text = request.POST.get('text')
-        if text:
-            note.text = text
-            note.save()
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Заметка обновлена',
-                'note': {
-                    'id': note.id,
-                    'text': note.text
-                }
-            })
-        return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
-    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
+
+    try:
+
+        note = get_object_or_404(Note, id=note_id, user=request.user)
+        data = json.loads(request.body)
+        new_text = data.get('text', '').strip()
+
+        if not new_text:
+            return JsonResponse({'status': 'error', 'message': 'Текст заметки не может быть пустым'})
+
+        note.text = new_text
+        note.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Заметка обновлена',
+            'note': {'id': note.id, 'text': note.text}
+        })
+
+    except (json.JSONDecodeError, Exception) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 @login_required
+@require_POST  # Проверяем, что запрос является POST
+@csrf_protect  # Защищаем от CSRF атак
 def delete_note(request, note_id):
-    note = get_object_or_404(Note, id=note_id, user=request.user)
-    if request.method == 'POST':
+    try:
+        # Получаем заметку по её id
+        note = get_object_or_404(Note, id=note_id, user=request.user)
+
+        # Удаляем заметку
         note.delete()
+
+        # Возвращаем успешный ответ
         return JsonResponse({'status': 'success', 'message': 'Заметка удалена'})
-    return JsonResponse({'status': 'error', 'message': 'Неверный запрос'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
