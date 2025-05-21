@@ -1,17 +1,43 @@
-{% extends "pages\base.html" %}
+{% extends "pages/base.html" %}
+{% load static %}
 
-{% block title %} Заметки {% endblock %}
+{% block title %}Заметки{% endblock %}
 
 {% block content %}
 
-<h1>Мои заметки</h1>
-<input id="search" class="form-control mb-2" placeholder="Поиск по заметкам...">
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <div></div>
-  <button id="sort-notes" class="btn btn-outline-secondary btn-sm">Сортировать А–Я</button>
-</div>
-<div id="notes-list" class="mb-3"></div>
-<textarea id="note-input" class="form-control mb-2" placeholder="Новая заметка..."></textarea>
-<button id="save-note" class="btn btn-primary">Сохранить</button>
+<div id="notes-app"
+     data-create-note-url="{% url 'create_note' %}"
+     data-edit-note-url="{% url 'edit_note' 0 %}"
+     data-delete-note-url="{% url 'delete_note' 0 %}">
 
+    <h1>Мои заметки</h1>
+
+    <!-- Добавляем скрытый input с csrf_token -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <input id="search" class="form-control mb-2" placeholder="Поиск по заметкам...">
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div></div>
+        <button id="sort-notes" class="btn btn-outline-secondary btn-sm">Сортировать А–Я</button>
+    </div>
+
+    <div id="notes-list" class="mb-3">
+        {% for note in notes %}
+            <div class="note-item" data-id="{{ note.id }}">
+                <p class="note-text">{{ note.text }}</p>
+                <button class="btn btn-sm btn-outline-primary edit-btn">Редактировать</button>
+                <button class="btn btn-sm btn-outline-danger delete-btn">Удалить</button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <textarea id="note-input" class="form-control mb-2" placeholder="Новая заметка..."></textarea>
+    <button id="save-note" class="btn btn-primary">Сохранить</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'pages/js/script.js' %}"></script>
 {% endblock %}
